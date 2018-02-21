@@ -188,9 +188,10 @@ for iter= 1:itmax
     
     % update rho if update==1
     if update==1 & mod(iter,10)==0
-        if ErrEig>Eigtol & ErrObj<Objtol/10; rho= 1.1*rho;  end
-        if ErrEig<Eigtol/10 & ErrObj>Objtol; rho= 0.9*rho;   end  
-        H2r = H2/rho; H2Dr  = H2D/rho; 
+        rho0 = rho;
+        if ErrEig>Eigtol & ErrObj<Objtol/10; rho= 1.1*rho; end
+        if ErrEig<Eigtol/10 & ErrObj>Objtol; rho= 0.9*rho; end  
+        if rho0~=rho; H2r = H2/rho; H2Dr  = H2D/rho;       end
     end
     
 end
