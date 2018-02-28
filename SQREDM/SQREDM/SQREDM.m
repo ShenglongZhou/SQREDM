@@ -115,10 +115,9 @@ fSD   = full(SD);
 scale = max(fSD(:));
 if scale<=10; scale=1; else D=D./scale; fSD=fSD./scale; end
 
-HD = full(spones(D)) ;
-H  = HD ;
 % H  = zeros(n,n);
 % H(D>0)=fSD(D>0)/max(fSD(D>0));
+H  = full(spones(D)) ;
 D  = full(D);
 r  = dim;
 T  = [];
