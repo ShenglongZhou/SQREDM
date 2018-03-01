@@ -47,8 +47,8 @@ function Out = SQREDM(D,dim,pars)
 %       Out.stress:relative stress
 %
 % If pars.PP exists 
-%       Out.X:     (dim x (n-m)) matrix, coordinates before refinement 
-%       Out.rX:    (dim x (n-m)) matrix, coordinates after refinement 
+%       Out.X:     dim-by-(n-m) matrix, coordinates before refinement 
+%       Out.rX:    dim-by-(n-m) matrix, coordinates after refinement 
 %       Out.Time:  total time including time for refinement
 %       Out.rTime: time for refinement
 %       Out.RMSD:  Root Mean Square Distance (RMSD) before refinement 
