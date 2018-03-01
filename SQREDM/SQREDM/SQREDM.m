@@ -2,75 +2,66 @@ function Out = SQREDM(D,dim,pars)
 %
 % This code aims to solve the model
 %
-%   min_Z  \| sqrt(H).*(sqrt(Z)-D) \|^2 +rho\|Z+P_Kr(-Z)\|^2
+%   min_Z  || sqrt(H).*(sqrt(Z)-D) ||^2 + rho ||Z+P_Kr(-Z)||^2
 %    s.t.    L<=Z<=U
 %
 %
-% For general MDS problem
-% Input:
-%   D  : the n x n dissimilarities matrix                     (required)
-%   dim: the embedding dimension  (e.g. dim = 2 or 3)         (required)
-%   pars:parameters and other information                     (optional)
-%        pars.m   : m  -- the number of given points, m>=0. 
-%        pars.PP  : PP -- dim-by-n matrix of coordinates of n points
-%                         with first m(>=0) columns being given
-%        pars.rho : initial value of rho; (default rho=sqrt(n))  
-%        pars.update: 0--fix rho (default); 1-- update rho during process      
-%        pars.LOWBD : upper bound i.e., L=pars.LOWBD.^2, Z_{ij}>=L_{ij}^2 
-%        pars.UPPBD : lower bound i.e., U=pars.LOWBD.^2, Z_{ij}<=U_{ij}^2
-%                     Note: elements of pars.LOWBD and pars.UPPBD are
-%                           UNSQUARED distances 
-%        pars.Otol :  tolerance for objective, default Otol=sqrt(n)*1e-3;
-%        pars.Etol :  tolerance for eigenvalue, default Etol=1e-3;
-%        pars.draw :  1--plot localizations in Re^dim (default); 0--no plot
-% Output:
-%   Out.X:      dim-by-n matrix,  final embeddings
-%   Out.Time:   total time
-%   Out.Stress: relative stress
+% INPUTS:
 %
-% For sensor network localization (SNL) problem:
-% Input:
-%   D:   the n x n dissimilarities matrix                        (required)
-%       [anchor-anchor (unsquared)distance, anchor-sensor (unsquared)distance;
-%        sensor-anchor (unsquared)distance, sensor-sensor (unsquared)distance]
-%        distances are UNSQUARED, i.e. D_ij=||point_i-point_j||    
-%        diag(D) = 0
-%        Note: Format of D is different from SNLSDP or SFSDP
+%	D   : n-by-n dissimilarities matrix                          [required]
+%         diag(D) = 0
+%         dissimilarities are UNSQUARED, i.e.,
+%                          D_ij=||point_i-point_j||+noise 
+%         
+%   dim : the embedding dimension  (e.g. dim = 2 or 3)           [required]
 %
-%   dim: The embedding dimensions (e.g. dim = 2)                 (required)
-%
-%   pars:parameters and other informations                       (optional)
-%        pars.m   : m  -- the number of given anchors, m>=0.
-%        pars.PP  : PP = [PA, PS]
-%                   PA -- dim-by-m matrix of coordinates of m anchors
-%                   PS -- dim-by-(n-m) matrix of coordinates of (n-m) sensors
-%        pars.rho : initial value of rho; (default one rho=sqrt(n))
-%        pars.update:0--fix rho (default); 1-- update rho during process
-%        pars.Otol : tolerance for objective; default Otol=sqrt(n)*1e-3;
-%        pars.Etol : tolerance for eigenvalue, default Etol=1e-3;
+%   pars: parameters and other information                       [optional]
+%         pars.m   : m  -- the number of given points, m>=0  
+%         pars.PP  : PP -- dim-by-n matrix of coordinates of n points with
+%                          first m(>=0) columns being given
+%                    For sensor network localization (SNL)
+%                    PP = [PA, PS]
+%                    PA -- dim-by-m matrix of coordinates of m anchors
+%                    PS -- dim-by-(n-m) matrix of coordinates of (n-m) sensors
+%        pars.rho  : initial value of rho; (default rho=sqrt(n))  
+%        pars.update:0  -- fix rho (default); 1 -- update rho during process       
+%        pars.LOWBD: upper bound i.e., L=pars.LOWBD.^2, Z_{ij}>=L_{ij}^2 
+%        pars.UPPBD: lower bound i.e., U=pars.LOWBD.^2, Z_{ij}<=U_{ij}^2
+%                    Note: elements of pars.LOWBD and pars.UPPBD are UNSQUARED distances                          
 %        pars.range: the communication range of two points, which means
-%                    upper bound for Z_{ij}<=pars.range^2 if (D_{ij}>0 &i~=j)
-%                    lower bound for Z_{ij}>=pars.range^2 if (D_{ij}==0&i~=j)
-%        pars.draw: 1--plot localizations in Re^2 (default); 0--no plot.
+%                    upper bound for Z_{ij}<=pars.range^2 if (D_{ij}>0  & i~=j)
+%                    lower bound for Z_{ij}>=pars.range^2 if (D_{ij}==0 & i~=j)
+%                    Note: pars.range is particular for SNL problem. If pars.range
+%                    exists, no need pars.LOWBD and pars.UPPBD
+%        pars.Otol : tolerance for objective, default Otol=sqrt(n)*1e-3 
+%        pars.Etol : tolerance for eigenvalue, default Etol=1e-3  
+%                    Note: os the noise is realtely large change Etol=1e-2
+%        pars.draw : 1--plot localizations in Re^dim (default); 0--no plot 
 %
-% Output:
-%   Out.X:     dim-by-(n-m) matrix,final sensors' positions before refinement 
-%   Out.rX:    dim-by-(n-m) matrix,final sensors' positions after refinement 
-%   Out.Time:  total time including time for refinement
-%   Out.rTime: time for refinement
-%   Out.RMSD:  Root Mean Square Distance (RMSD) before refinement 
-%   Out.rRMSD: Root Mean Square Distance (RMSD) after refinement 
+%
+% OUTPUTS:
+%
+% If NO pars.PP exists 
+%       Out.X:     dim-by-n matrix,  final coordinates 
+%       Out.Time:  total time
+%       Out.stress:relative stress
+%
+% If pars.PP exists 
+%       Out.X:     (dim x (n-m)) matrix, coordinates before refinement 
+%       Out.rX:    (dim x (n-m)) matrix, coordinates after refinement 
+%       Out.Time:  total time including time for refinement
+%       Out.rTime: time for refinement
+%       Out.RMSD:  Root Mean Square Distance (RMSD) before refinement 
+%       Out.rRMSD: Root Mean Square Distance (RMSD) after refinement 
 %
 % Refinement step is taken from Kim-Chaun Toh SNLSDP solver
 %
-% Send your comments and suggestions to               %%%%%%
-%          sz3g14@soton.ac.uk                         %%%%%%
+% Send your comments and suggestions to   [ sz3g14@soton.ac.uk ]                       
 %
-%%%%% Warning: Accuracy may not be guaranteed!!!!!    %%%%%%
+% Warning: Accuracy may not be guaranteed!!!!!   
+%
+% This version: March 1st, 2018,   written by Shenglong Zhou   
 
-%%%%%%%%%          This version: Feb 20, 2018         %%%%%%
-
-%%%%%%%%%          written by Shenglong Zhou          %%%%%%
 
 t0=tic;
 
@@ -88,7 +79,7 @@ else
     fprintf('Number of unknown embeddings: %3d\n',n);
 end
 
-Do    = full(D);
+Do    = D;
 nD    = nnz(D);
 rate  = nD/n/n;
 % shortest path to complete the missing elements of D
@@ -115,9 +106,7 @@ fSD   = full(SD);
 scale = max(fSD(:));
 if scale<=10; scale=1; else D=D./scale; fSD=fSD./scale; end
 
-% H  = zeros(n,n);
-% H(D>0)=fSD(D>0)/max(fSD(D>0));
-H  = full(spones(D)) ;
+H = full(spones(D)) ;
 D  = full(D);
 r  = dim;
 T  = [];
@@ -154,7 +143,7 @@ update = 0;
 draw   = 1;
 if isfield(pars,'rho');    rho    = pars.rho;    end
 if isfield(pars,'update'); update = pars.update; end 
-if isfield(pars, 'draw');  draw   = pars.draw;   end
+if isfield(pars,'draw');   draw   = pars.draw;   end
 
 H2    = H.*H;  
 H2D   = H2.*D;
@@ -239,7 +228,7 @@ function  [m,itmax,Eigtol,Objtol] = getparameters(n,pars)
     itmax  = 2000; 
     m      = 0;
     Objtol = sqrt(n)*1e-3;
-    Eigtol = 1e-3; % Eigtol = 1e-2 if the noise factor nf>0.2, 
+    Eigtol = 1e-3;              % Eigtol = 1e-2 if the noise factor nf>0.2 
     if isfield(pars, 'Otol');   Objtol=pars.Otol;  end
     if isfield(pars, 'm');      m=pars.m;          end
     if isfield(pars, 'Etol');   Eigtol=pars.Etol;  end
@@ -380,7 +369,7 @@ function [Q, P, a0, p0] = procrustes_qi(A, P)
     Q  = U0*V';
     P  = Q'*P1 + a0(:, ones(m0,1));
 end
-
+% ------------------------------------------------------------------------
 function  plot_SNL(A,B,a,b,pars)
 % Graph embedding ponits
 figure,
