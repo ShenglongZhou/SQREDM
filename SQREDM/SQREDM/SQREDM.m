@@ -2,7 +2,7 @@ function Out = SQREDM(D,dim,pars)
 %
 % This code aims to solve the model
 %
-%   min_Z  || sqrt(H).*(sqrt(Z)-D) ||^2 + rho ||Z+P_Kr(-Z)||^2
+%   min_Z  || sqrt(H).*(sqrt(Z)-D) ||^2 + (rho/2) ||Z+P_Kr(-Z)||^2
 %    s.t.    L<=Z<=U
 %
 %
@@ -71,12 +71,12 @@ if nargin==2; pars=[]; end
 [m,itmax,Eigtol,Objtol] = getparameters(n,pars);
 
 if m>0; 
-    fprintf('\nNumber of given embeddings : %3d\n',m);
-    fprintf('Number of unknown embeddings: %3d\n',n-m);
+    fprintf('\nNumber of given points : %3d\n',m);
+    fprintf('Number of unknown points: %3d\n',n-m);
     fprintf('Procrustes analysis and refinements step will be done!\n');
 else
-    fprintf('\nNo embeddings are given!\n'); 
-    fprintf('Number of unknown embeddings: %3d\n',n);
+    fprintf('\nNo points are given!\n'); 
+    fprintf('Number of unknown points: %3d\n',n);
 end
 
 Do    = D;
