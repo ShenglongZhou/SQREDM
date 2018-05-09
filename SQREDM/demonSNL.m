@@ -7,7 +7,6 @@ clc; clear all; close all;
 % If you want to test more difficult problems such as nf=0.5, then try to
 % increase range such as range = 0.4 and set pars as 
 %    pars.update = 1; 
-%    pars.Etol   = 1e-2;
 %    pars.rho    = log(n);
 % to make solver render more accurate solutions
 
@@ -31,7 +30,6 @@ end
 %Call solver SQREDM
 if nf>0.2;
 pars.update= 1; 
-pars.Etol  = 1e-2;
 pars.rho   = log(n)/5;
 end
 pars.draw  = 1;
