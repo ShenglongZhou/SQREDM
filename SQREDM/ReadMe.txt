@@ -11,8 +11,9 @@ To implement this solver, please
 
 This source code contains the algorithm described in:
 
-[1] S.L. Zhou, N.H. Xiu and H.-D. Qi (2017), 
-"A Fast Matrix Majorization-Projection Method for Penalized Stress Minimization with Box Constraints".
+[1] S.L. Zhou, N.H. Xiu and H.-D. Qi, 
+"A Fast Matrix Majorization-Projection Method for Penalized Stress Minimization with Box Constraints,
+ IEEE Transactions on Signal Processing, vol. 66, no. 16, Aug 15, 2018".
 
 Please give credits to this paper if you use the code for your research.
 
