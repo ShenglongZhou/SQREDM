@@ -35,24 +35,24 @@ function Out = SQREDM(D,dim,pars)
 %                    exists, no need pars.LOWBD and pars.UPPBD
 %        pars.Otol : tolerance for objective, default Otol=sqrt(n)*1e-3 
 %        pars.Etol : tolerance for eigenvalue, default Etol=1e-3  
-%                    Note: os the noise is realtely large change Etol=1e-2
+%                    Note: If the noise is relatively large, change Etol=1e-2
 %        pars.draw : 1--plot localizations in Re^dim (default); 0--no plot 
 %
 %
 % OUTPUTS:
 %
 % If NO pars.PP exists 
-%       Out.X:     dim-by-n matrix,  final coordinates 
-%       Out.Time:  total time
-%       Out.stress:relative stress
+%       Out.X:      dim-by-n matrix,  final coordinates 
+%       Out.Time:   total time
+%       Out.stress: relative stress
 %
 % If pars.PP exists 
-%       Out.X:     dim-by-(n-m) matrix, coordinates before refinement 
-%       Out.rX:    dim-by-(n-m) matrix, coordinates after refinement 
-%       Out.Time:  total time including time for refinement
-%       Out.rTime: time for refinement
-%       Out.RMSD:  Root Mean Square Distance (RMSD) before refinement 
-%       Out.rRMSD: Root Mean Square Distance (RMSD) after refinement 
+%       Out.X:      dim-by-(n-m) matrix, coordinates before refinement 
+%       Out.rX:     dim-by-(n-m) matrix, coordinates after refinement 
+%       Out.Time:   total time including time for refinement
+%       Out.rTime:  time for refinement
+%       Out.RMSD:   Root Mean Square Distance (RMSD) before refinement 
+%       Out.rRMSD:  Root Mean Square Distance (RMSD) after refinement 
 %
 % Refinement step is taken from Kim-Chaun Toh SNLSDP solver
 %
