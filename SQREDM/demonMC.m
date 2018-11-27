@@ -7,8 +7,8 @@ clc; clear all; close all;
 %      constraints, Discrete Geometry and Optimization, 2013."
 
 pro = 1;
-if pro==1; load 1LFB.mat  % n=641
-else       load 1RGS.mat  % n=2015      
+if pro==1;  load 1LFB.mat  % n=641
+else;       load 1RGS.mat  % n=2015      
 end
 
 %Generate the problem
