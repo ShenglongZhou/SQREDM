@@ -33,7 +33,7 @@ function Out = SQREDM(D,dim,pars)
 %                    lower bound for Z_{ij}>=pars.range^2 if (D_{ij}==0 & i~=j)
 %                    Note: pars.range is particular for SNL problem. If pars.range
 %                    exists, no need pars.LOWBD and pars.UPPBD
-%        pars.Otol : tolerance for objective, default Otol=sqrt(n)*1e-3 
+%        pars.Otol : tolerance for objective, default Otol=sqrt(n)*5e-4 
 %        pars.Etol : tolerance for eigenvalue, default Etol=1e-3  
 %                    Note: If the noise is relatively large, change Etol=1e-2
 %        pars.draw : 1--plot localizations in Re^dim (default); 0--no plot 
@@ -70,7 +70,7 @@ n  = size(D,1);
 if nargin==2; pars=[]; end
 [m,itmax,Eigtol,Objtol] = getparameters(n,pars);
 
-if m>0; 
+if m>0  
     fprintf('\nNumber of given points : %3d\n',m);
     fprintf('Number of unknown points: %3d\n',n-m);
     fprintf('Procrustes analysis and refinements step will be done!\n');
@@ -104,7 +104,7 @@ end
 
 fSD   = full(SD);
 scale = max(fSD(:));
-if scale<=10; scale=1; else D=D./scale; fSD=fSD./scale; end
+if scale<=10; scale=1; else; D=D./scale; fSD=fSD./scale; end
 
 H = full(spones(D)) ;
 D  = full(D);
@@ -118,16 +118,17 @@ UB = n*max(Z(:));
 L  = zeros(n); 
 U  = UB*ones(n);
 
-if isfield(pars,'LOWBD');  
-    L  = (pars.LOWBD/scale).^2;  
+if isfield(pars,'LOWBD') 
+   L  = (pars.LOWBD/scale).^2;  
 end
-if isfield(pars,'UPPBD');  
-    U  = (pars.UPPBD/scale).^2;
-    HU = spones(tril(U,-1));
-    if nnz(HU)<(n^2-n)/2; U=U+(1-HU-HU')*UB; end   % if U_{ij}=0 set U_{ij}=UB
-    U(U==inf)=UB;
-end 
-if isfield(pars,'range');  
+if isfield(pars,'UPPBD')  
+   U  = (pars.UPPBD/scale).^2;
+   HU = spones(U);
+   if nnz(HU)<(n^2-n); U=U+(1-HU).*UB; end
+   if max(U(:))==inf;  U(U==inf)=UB;   end 
+end
+
+if isfield(pars,'range') 
     H1 = 1-H; 
     rs = (pars.range/scale)^2; 
     L  = L.*H  + H1*rs;                           
@@ -173,14 +174,14 @@ for iter= 1:itmax
     ErrObj  = abs(FZro-FZr)/(rho+FZro);
     fprintf('Iter: %3d  ErrEig: %.3e  ErrObj: %.3e\n',iter, ErrEig, ErrObj);
     
-    if (ErrEig<Eigtol | abs(ErrEig0-ErrEig)<1e-8) & ...
-       ErrObj<Objtol & iter>9; break; end 
+    if (ErrEig<Eigtol || abs(ErrEig0-ErrEig)<1e-8) && ...
+       ErrObj<Objtol && iter>9; break; end 
     
     % update rho if update==1
-    if update==1 & mod(iter,10)==0
+    if update==1 && mod(iter,10)==0
         rho0 = rho;
-        if ErrEig>Eigtol & ErrObj<Objtol/10; rho= 1.1*rho; end
-        if ErrEig<Eigtol/10 & ErrObj>Objtol; rho= 0.9*rho; end  
+        if ErrEig>Eigtol && ErrObj<Objtol/10; rho= 1.1*rho; end
+        if ErrEig<Eigtol/10 && ErrObj>Objtol; rho= 0.9*rho; end  
         if rho0~=rho; H2r = H2/rho; H2Dr  = H2D/rho;       end
     end
     
@@ -229,8 +230,8 @@ end
 function  [m,itmax,Eigtol,Objtol] = getparameters(n,pars)
     itmax  = 2000; 
     m      = 0;
-    Objtol = sqrt(n)*1e-3;
-    Eigtol = 1e-2;   
+    Objtol = sqrt(n)*5e-4;
+    Eigtol = 1e-3;   
     if isfield(pars, 'Otol');   Objtol=pars.Otol;  end
     if isfield(pars, 'm');      m=pars.m;          end
     if isfield(pars, 'Etol');   Eigtol=pars.Etol;  end
@@ -310,7 +311,7 @@ end
 function Z0= ProjKr(A,r)
 % The projection of A on cone K_+^n(r)  
 	JAJ     = JXJ(A);
-	JAJ     = (JAJ+JAJ')/2
+	JAJ     = (JAJ+JAJ')/2;
 	[V0,P0] = eigs(JAJ,r,'LA');
 	Z0      = real(V0*max(0,P0)*V0'+A-JAJ); 
 end
@@ -390,7 +391,7 @@ if ~isfield(pars,'E')
             subplot(1,2,j),
             set(gca,'FontName','Times','FontSize',8)
             plot(PP(1,T),PP(2,T),'gs','markersize',4,'linewidth',2);     
-            for i=1:n-m; 
+            for i=1:n-m  
                 line([A(1,i) PP(1,m+i)], [A(2,i) PP(2,m+i)],...
                     'linewidth',.1,'color','b'); hold on
             end
@@ -398,7 +399,7 @@ if ~isfield(pars,'E')
             plot(A(1,:),A(2,:),'m*','markersize',3);hold on          
             plot(PP(1,T),PP(2,T),'gs','markersize',4,'linewidth',2);
             ZZ = [PP Af]';
-            if j==1;
+            if j==1 
                 xlabel(['Before refinement: RMSD = ', sprintf('%4.2e', a)],...
                     'FontName','Times','FontSize',8);
             else
@@ -419,13 +420,13 @@ if ~isfield(pars,'E')
             plot3(PP(1,T1),PP(2,T1),PP(3,T1),'bo','markersize',4.5);hold on
             plot3(A(1,:),A(2,:),A(3,:),'m*','markersize',3);hold on   
             plot3(PP(1,T),PP(2,T),PP(3,T),'gs','markersize',4,'linewidth',2); hold on            
-            for i=1:n-m; 
+            for i=1:n-m  
                 line([A(1,i) PP(1,m+i)], [A(2,i) PP(2,m+i)], [A(3,i) PP(3,m+i)],...
                     'linewidth',.1,'color','b'); hold on
             end
             ZZ = [PP Af]';
             plot3(PP(1,T),PP(2,T),PP(3,T),'gs','markersize',4,'linewidth',2); hold on        
-            if j==1;
+            if j==1 
                 title(['Before refinement: RMSD = ', sprintf('%4.2e', a)],...
                     'FontName','Times','FontSize',8);
             else
@@ -447,7 +448,7 @@ else
 	scatter(Xfrefine(1,pars.M),Xfrefine(2,pars.M),12,'filled');
  	scatter(Xfrefine(1,1:pars.m),Xfrefine(2,1:pars.m),12,'filled','k');
     set(gca,'FontName','Times','FontSize',8);
-    if a <b;          
+    if a <b           
         title(['Before refinement: RMSD = ',  sprintf('%4.2e', a)],...
                     'FontName','Times','FontSize',9);  
     else
