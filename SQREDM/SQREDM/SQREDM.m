@@ -8,7 +8,7 @@ function Out = SQREDM(D,dim,pars)
 %
 % INPUTS:
 %
-%	D   : n-by-n dissimilarities matrix                          [required]
+%   D   : n-by-n dissimilarities matrix                          [required]
 %         diag(D) = 0
 %         dissimilarities are UNSQUARED, i.e.,
 %                          D_ij=||point_i-point_j||+noise 
