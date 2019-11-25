@@ -25,8 +25,8 @@ function Out = SQREDM(D,dim,pars)
 %                    PS -- dim-by-(n-m) matrix of coordinates of (n-m) sensors
 %        pars.rho  : initial value of rho; (default rho=sqrt(n))  
 %        pars.update:0  -- fix rho (default); 1 -- update rho during process       
-%        pars.LOWBD: upper bound i.e., L=pars.LOWBD.^2, Z_{ij}>=L_{ij}^2 
-%        pars.UPPBD: lower bound i.e., U=pars.LOWBD.^2, Z_{ij}<=U_{ij}^2
+%        pars.LOWBD: lower bound i.e., L=pars.LOWBD.^2, Z_{ij}>=L_{ij}^2 
+%        pars.UPPBD: upper bound i.e., U=pars.LOWBD.^2, Z_{ij}<=U_{ij}^2
 %                    Note: elements of pars.LOWBD and pars.UPPBD are UNSQUARED distances                          
 %        pars.range: the communication range of two points, which means
 %                    upper bound for Z_{ij}<=pars.range^2 if (D_{ij}>0  & i~=j)
