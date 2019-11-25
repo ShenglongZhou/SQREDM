@@ -1,5 +1,19 @@
 function  plot_SNL(X,RMSD,refine,pars,H)
-
+% X      -- dim-by-(n-m) matrix containing coordinates of (n-m) points, where m>=0
+% RMSD   -- Root Mean Square Distance (RMSD) before refinement if refine=0
+%           Root Mean Square Distance (RMSD) after refinement  if refine=1
+% refine -- 0 plot X before refinement
+%           1 plot X after  refinement
+% pars   -- pars.PP:  dim-by-n matrix of coordinates of n points with first
+%                     m(>=0) columns being anchors
+%           pars.m:   anchors' number
+%           pars.E:   coordinates of points forming shap 'E' in EDM network
+%           pars.D:   coordinates of points forming shap 'D' in EDM network
+%           pars.M:   coordinates of points forming shap 'M' in EDM network
+% H      -- Connectivity matrix of a graph, i.e.,
+%                     Dis = squareform(pdist(pars.PP'));
+%                     mD  = max(Dis(:));
+%                     H  = full( spones( Dis(Dis<0.1*mD) ) );
 if ~isfield(pars,'E')   
     PP   = pars.PP;
     if isfield(pars, 'm'); m=pars.m; else m=0;  end
