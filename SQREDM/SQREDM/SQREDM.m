@@ -141,6 +141,7 @@ L(1:n+1:end) = 0;
 U(1:n+1:end) = 0;  
 Z      = min( max(Z, L ), U );
 
+
 rho    = sqrt(n);
 update = 0; 
 draw   = 1;
@@ -158,6 +159,7 @@ PZ    = ProjKr(-Z,r);
 fprintf('Start to run ... \n');
 fprintf('\n------------------------------------------------\n');
 ErrEig  = Inf; 
+FNorm   = @(var)norm(var,'fro')^2;
 FZr     = FNorm(sqrt(Z(TH))-D(TH))+rho*FNorm(Z+PZ)/2; 
 
 for iter= 1:itmax  
@@ -262,18 +264,18 @@ if nnz(In)/mw/nw < 0.4
     w3(In) = w(In).^3/27; 
     d(In)  = a2(In)-w3(In);
 
-    I1=In(find(d(In)<0));
+    I1=In( d(In)<0 );
     if ~isempty(I1) 
         x(I1)=(2*w(I1)/3).*(1+cos((2/3)*acos(sqrt(a2(I1)./w3(I1)))));
     end
     
-    I2=In(find( d(In)>=0 & w(In)>=0));
+    I2=In(  d(In)>=0 & w(In)>=0 );
     if ~isempty(I2)
         st2=sqrt(d(I2));
         x(I2)= ((a(I2)/2+st2).^(1/3)+(a(I2)/2-st2).^(1/3)).^2;
     end
     
-    I3=In(find( d(In)>=0 & w(In)<0));
+    I3=In( d(In)>=0 & w(In)<0 );
     if ~isempty(I3)
         st3=sqrt(d(I3));
         x(I3)= ((a(I3)/2+st3).^(1/3)-(st3-a(I3)/2).^(1/3)).^2;
@@ -301,11 +303,7 @@ else
 end
 x = real(x);
 end
-% ------------------------------------------------------------------------
-function fn= FNorm(A)
-% Compute the Frobenius norm of A, i.e., ||A||_F^2
-    fn=sum(sum(A.*A));
-end
+ 
 
 % ------------------------------------------------------------------------
 function Z0= ProjKr(A,r)
@@ -334,17 +332,16 @@ function Xs= procrustes_zhou(m0, PP, D0)
     JDJ    = -(JDJ+JDJ')/4;
     [U1,D1]= eigs(JDJ,r0,'LA');   
     X0     = (D1.^(1/2))*(U1');   
-    if m0>0
-    A      = PP(:,1:m0);
-    [Q,~,a0,p0] = procrustes_qi(A,X0(:,1:m0));	
-	Z0     = Q'*(X0-p0(:, ones(n0, 1))) + a0(:, ones(n0, 1)); 
-    Xs     = Z0(:,m0+1:n0);
-    Xa     = Z0(:, 1:m0);
-    %Xs    = Xs*mean(sum(Xa.*A)./sum(Xa.^2));
-    Xs     = Xs*max(1,sum(sum(Xa.*A))/sum(sum(Xa.^2)));
+    if m0  > 0
+        A  = PP(:,1:m0);
+        [Q,~,a0,p0] = procrustes_qi(A,X0(:,1:m0));	
+        Z0 = Q'*(X0-p0(:, ones(n0, 1))) + a0(:, ones(n0, 1)); 
+        Xs = Z0(:,m0+1:n0);
+        Xa = Z0(:, 1:m0);
+        Xs = Xs*max(1,sum(sum(Xa.*A))/norm(Xa,'fro'));
     else        
-    [~,~,Map]= procrustes(PP',X0'); 
-    Xs       = (Map.b*Map.T')*X0 + diag(Map.c(1,:))*ones(size(X0));
+        [~,~,Map]= procrustes(PP',X0'); 
+        Xs = (Map.b*Map.T')*X0 + diag(Map.c(1,:))*ones(size(X0));
     end
 end
 
