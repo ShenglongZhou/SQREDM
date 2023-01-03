@@ -71,35 +71,35 @@ if nargin==2; pars=[]; end
 [m,itmax,Eigtol,Objtol] = getparameters(n,pars);
 
 if m>0  
-    fprintf('\nNumber of given points : %3d\n',m);
-    fprintf('Number of unknown points: %3d\n',n-m);
-    fprintf('Procrustes analysis and refinements step will be done!\n');
+    fprintf('\n Number of given points : %3d\n',m);
+    fprintf(' Number of unknown points: %3d\n',n-m);
+    fprintf(' Procrustes analysis and refinements step will be done!\n');
 else
-    fprintf('\nNo points are given!\n'); 
-    fprintf('Number of unknown points: %3d\n',n);
+    fprintf('\n No points are given!\n'); 
+    fprintf(' Number of unknown points: %3d\n',n);
 end
 
 Do    = D;
 nD    = nnz(D);
 rate  = nD/n/n;
 % shortest path to complete the missing elements of D
-    fprintf('Available dissimilarities rate: %1.2f \n',rate);
+    fprintf(' Available dissimilarities rate: %1.2f \n',rate);
 if  rate<0.05
-    fprintf('Suggest providing more available dissimilarities!\n');
+    fprintf(' Suggest providing more available dissimilarities!\n');
 end
 if rate<0.9
     D2 = D.*D;    
-    disp('Contruct the shortest paths...');
+    disp(' Contruct the shortest paths...');
     ts = tic;
     SD = graphallshortestpaths(sparse(sqrt(D2)));
-    fprintf('Done the shortest paths by using %1.2f seconds\n',toc(ts));
+    fprintf(' Done the shortest paths by using %1.2f seconds\n',toc(ts));
     if any(SD == Inf)
-    error('The neighborhood graph is not connected, increase range!');
+    error(' The neighborhood graph is not connected, increase range!');
     end
     SD = max(SD, D);  % to only replace those missing distances  
 else
     SD = D;
-    disp('No shortest paths calculated!');
+    disp(' No shortest paths calculated!');
 end
 
 fSD   = full(SD);
@@ -156,28 +156,33 @@ H2Dr  = H2D/rho;
 TH    = find(H2Dr>0);  
 PZ    = ProjKr(-Z,r);
 
-fprintf('Start to run ... \n');
-fprintf('\n------------------------------------------------\n');
+fprintf(' Start to run the solver -- SQREDM \n');
+fprintf(' ------------------------------------------------------------\n');
+fprintf(' Iter       ErrEig       ErrObj      Objective     Time(sec) \n');
+fprintf(' ------------------------------------------------------------\n');
+
 ErrEig  = Inf; 
-FNorm   = @(var)norm(var,'fro')^2;
-FZr     = FNorm(sqrt(Z(TH))-D(TH))+rho*FNorm(Z+PZ)/2; 
+FNorm   = @(var)norm(var,'fro')^2; 
+fun     = @(Z,PZ,rho)(FNorm(sqrt(Z(TH))-D(TH))+rho*FNorm(Z+PZ)/2);
+ProjBox = @(PZ,H2r,H2Dr)min( max( Lhalf(-PZ-H2r,H2Dr,TH), L ), U );
+FZr     = fun(Z,PZ,rho); 
 
 for iter= 1:itmax  
     
-    Z   = min( max( Lhalf(-PZ-H2r,H2Dr,TH), L ), U );
+    Z   = ProjBox(PZ,H2r,H2Dr);
     PZ  = ProjKr(-Z,r);
     
     % stop criteria    
-    ErrEig0 = ErrEig;
-    gZ      = FNorm(Z+PZ)/2;
-    ErrEig  = 2*gZ/FNorm(JXJ(Z));
+    ErrEig0 = ErrEig; 
+    ErrEig  = FNorm(Z+PZ)/FNorm(JXJ(Z));
     FZro    = FZr;
-    FZr     = FNorm(sqrt(Z(TH))-D(TH))+rho*gZ;
+    FZr     = fun(Z,PZ,rho);
     ErrObj  = abs(FZro-FZr)/(rho+FZro);
-    fprintf('Iter: %3d  ErrEig: %.3e  ErrObj: %.3e\n',iter, ErrEig, ErrObj);
+    fprintf(' %3d      %9.2e    %9.2e     %9.3e    %7.3f\n',...
+        iter, ErrEig, ErrObj, FZr, toc(t0));
     
     if (ErrEig<Eigtol || abs(ErrEig0-ErrEig)<1e-8) && ...
-       ErrObj<Objtol && iter>9; break; end 
+       ErrObj<Objtol; break; end 
     
     % update rho if update==1
     if update==1 && mod(iter,10)==0
@@ -201,29 +206,31 @@ if isfield(pars, 'PP')
     Out.Z     = Z*scale^2;
     Out.X     = Xs*scale;
     Out.rX    = Xref*scale;
+    Out.iter  = iter;
     Out.Time  = Out.Time+Out.rTime;
     Out.RMSD  = sqrt(FNorm(pars.PP(:,Ts)-Out.X)/(n-m));
     Out.rRMSD = sqrt(FNorm(pars.PP(:,Ts)-Out.rX)/(n-m));   
     if  draw
         plot_SNL(Out.X,Out.rX,Out.RMSD,Out.rRMSD,pars);      
     end
-    fprintf('------------------------------------------------\n');
-    fprintf('rTime:   %1.3fsec\n',  Out.rTime)
-    fprintf('Time:    %1.3fsec\n',  Out.Time)
-    fprintf('RMSD:    %1.2e \n',    Out.RMSD )
-    fprintf('rRMSD:   %1.2e \n',    Out.rRMSD)
+    fprintf(' ------------------------------------------------------------\n');
+    fprintf(' Refine Time:   %1.3fsec\n',  Out.rTime)
+    fprintf(' Total  Time:   %1.3fsec\n',  Out.Time)
+    fprintf(' RMSD:          %8.2e \n',    Out.RMSD )
+    fprintf(' Refine RMSD:   %8.2e \n',    Out.rRMSD)
 else
     Out.Time   = toc(t0);
     [U,E]      = eig(JXJ(-Z)/2);
     Eig        = sort(real(diag(E)),'descend');
     Er         = real((Eig(1:r)).^0.5); 
     Out.Eigs   = Eig*(scale^2);
+    Out.iter  = iter;
     Out.X      = (sparse(diag(Er))*real(U(:,1:r))')*scale;
     Z          = sqrt(Z)*scale;
     Out.stress = sqrt(FNorm(sqrt(Z(H~=0))-Do(H~=0))/FNorm(Do(H~=0)));
-    fprintf('------------------------------------------------\n');
-    fprintf('Time:      %1.3fsec\n',  Out.Time)
-    fprintf('Stress:    %1.2e \n',    Out.stress)    
+    fprintf(' ------------------------------------------------------------\n');
+    fprintf(' Time:      %1.3fsec\n',  Out.Time)
+    fprintf(' Stress:    %1.2e \n',    Out.stress)    
 end
 
 end
@@ -373,10 +380,11 @@ end
 % ------------------------------------------------------------------------
 function  plot_SNL(A,B,a,b,pars)
 % Graph embedding ponits
-figure,
+figure('Renderer', 'painters', 'Position',[800 400 700 330]);
+axes('Position', [0.09 0.13 0.91 0.82] ); 
 if ~isfield(pars,'E')   
     PP=pars.PP;
-    if isfield(pars, 'm'); m=pars.m; else m=0;  end
+    if isfield(pars, 'm'); m=pars.m; else; m=0;  end
     [r,n]= size(PP);
     T   = 1:m;
     T1  = m+1:n;
@@ -385,7 +393,7 @@ if ~isfield(pars,'E')
         Bf=[PP(:,T) B];
         for j=1:2
             if j==2; A=B; Af=Bf; a=b; end
-            subplot(1,2,j),
+            sub = subplot(1,2,j);
             set(gca,'FontName','Times','FontSize',8)
             plot(PP(1,T),PP(2,T),'gs','markersize',4,'linewidth',2);     
             for i=1:n-m  
@@ -403,8 +411,13 @@ if ~isfield(pars,'E')
                 xlabel(['After refinement: rRMSD = ', sprintf('%4.2e', a)],...
                     'FontName','Times','FontSize',8);
             end
-            axis([min(min(ZZ(:,1))) max(max(ZZ(:,1))) min(min(ZZ(:,2))) max(max(ZZ(:,2)))]) 
+            axis([min(min(ZZ(:,1))) max(max(ZZ(:,1))) min(min(ZZ(:,2))) max(max(ZZ(:,2)))]); 
             hold on
+            if j==1 
+                set(sub, 'Position',[0.08,0.12,0.4,0.85] );
+            else 
+                set(sub, 'Position',[0.58,0.12,0.4,0.85] );
+            end
         end
     else
         Af=[PP(:,T) A];
@@ -432,7 +445,7 @@ if ~isfield(pars,'E')
             end
             grid on;
             axis([min(min(ZZ(:,1))) max(max(ZZ(:,1))) min(min(ZZ(:,2))) max(max(ZZ(:,2)))...
-                min(min(ZZ(:,3))) max(max(ZZ(:,3)))]) 
+                min(min(ZZ(:,3))) max(max(ZZ(:,3)))]); 
             hold on             
         end
     end    
